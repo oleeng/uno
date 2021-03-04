@@ -20,6 +20,12 @@ io.on('connection', (socket) => {
         client.get(msg, function(err, reply) {
             // reply is null when the key is missing
             console.log(reply)
+            if(reply == null){
+                client.set(msg, 'redis test', (err, reply) => {
+                    if (err) throw err;
+                    console.log(reply);
+                });
+            }
         });
         io.emit('ttt', "we lit as fuck on id: "+msg);
     });
