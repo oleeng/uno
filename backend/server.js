@@ -1,43 +1,54 @@
 const express = require('express');
 const app = express();
 const http = require("http").createServer(app);
-//const bodyParser = require('body-parser');
 const io = require("socket.io")(http);
 const path = require('path');
+const {
+  UnoApp,
+  User,
+  Room,
+  generateRoomKey
+} = require('./util/helper.js');
 
-io.on('connection', (socket) => {
-    socket.on('we lit', (msg) => {
-
-        io.emit('ttt', "we lit as fuck on id: "+msg);
-    });
-    console.log('a user connected');
-    socket.on('disconnect', () => {
-        console.log('user disconnected')
-    });
-});
-
-const port = process.env.PORT || 5000;
-
-//app.use(bodyParser.json());
-//app.use(bodyParser.urlencoded({ extended: true }));
+// Instantiate a Uno-Game
+const Uno = new UnoApp()
 
 app.use(express.static('html'))
 
+const port = process.env.PORT || 3000;
+
 app.get('/', function(req, res){
-    res.sendFile(path.resolve('html/test.html'));
-});
+    res.sendFile(path.resolve('./html/test.html'));
+})
 
-app.get('/api/hello', (req, res) => {
-    res.send("hello from express");
-});
-
-app.post('/api/world', (req, res) => {
-    console.log(req.body);
-    res.send(
-        `I received your POST request. This is what you sent me: ${req.body.post}`,
-    );
-});
+app.get('/:room_key', function(req, res) {
+    res.sendFile(path.resolve('./html/room/index.html'));
+})
 
 http.listen(port, () => {
     console.log(`Listening on port ${port}`)
+});
+
+
+
+io.on('connection', (socket) => {
+    console.log('a user connected');
+
+    socket.on('createRoom', (username) => {
+		let roomKey = generateRoomKey(Uno.getAllKeys())
+
+        let tmpRoom = new Room(roomKey)
+        Uno.addRoom(tmpRoom)
+
+        let tmpUser = new User(username, "admin")
+		tmpRoom.addUser(tmpUser)
+
+		socket.join(roomKey)
+        
+        socket.emit('roomCreated', roomKey)
+    });
+
+    socket.on('disconnecting', () => {
+        console.log('user disconnected')
+    });
 });
