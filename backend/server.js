@@ -5,28 +5,9 @@ const http = require("http").createServer(app);
 const io = require("socket.io")(http);
 const path = require('path');
 
-const redis = require("redis");
-const client = redis.createClient({
-    host: 'host.docker.internal',
-    port: 6379
-})
-
-client.on("error", function(error) {
-    console.error(error);
-});
-
 io.on('connection', (socket) => {
     socket.on('we lit', (msg) => {
-        client.get(msg, function(err, reply) {
-            // reply is null when the key is missing
-            console.log(reply)
-            if(reply == null){
-                client.set(msg, 'redis test', (err, reply) => {
-                    if (err) throw err;
-                    console.log(reply);
-                });
-            }
-        });
+
         io.emit('ttt', "we lit as fuck on id: "+msg);
     });
     console.log('a user connected');
