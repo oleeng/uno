@@ -9,8 +9,9 @@ function create() {
 	socket.emit('createRoom', username)
 }
 
-socket.on('roomCreated', (key) => {
-	window.location.href = "/" + key
+socket.on('roomCreated', ({roomKey, hostId}) => {
+	console.log(roomKey)
+	window.location.href = "/" + roomKey + "/" + hostId
 })
 
 
