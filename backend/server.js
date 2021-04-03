@@ -23,7 +23,7 @@ app.get('/', function(req, res){
 
 // Wenn jemand per Einladugnslink beitritt und noch keine User ID hat
 app.get('/:room_key', function(req, res) {
-    res.sendFile(path.resolve('./html/room/room.html'));
+    res.sendFile(path.resolve('./html/join-room/join-room.html'));
 })
 
 // URL, wenn man als existierender User in einem Raum ist
@@ -38,8 +38,8 @@ http.listen(port, () => {
 
 
 io.on('connection', (socket) => {
-    console.log('a user connected');
 
+    /* 'createRoom' is emitted when the host enters his name and clicks the createRoom Button on index.html */
     socket.on('createRoom', (username) => {
 		let roomKey = generateRoomKey(Uno.getAllKeys())
 
@@ -60,9 +60,26 @@ io.on('connection', (socket) => {
         socket.emit('roomCreated', {roomKey, hostId})
     });
 
-    // Should be received when the URL includes room_key and user_id
-    // => when app.get('/:room_key/:user_id') is called
-    socket.on('joinRoom', (roomKey, userId) => {
+
+    /* 'createUser' is being emitted when a user uses a sharelink to join an existin room and submits his chosen username */
+    socket.on('createUser', ({roomKey, userName}) => {
+
+        try {
+            if(Uno.hasRoom(roomKey)) {
+                const userId = Uno.createAndAddUserToRoom(roomKey, userName)
+                io.emit("userCreated", userId)
+            }
+        }
+        catch (e) {
+            //TODO DO STH WHEN ROOM DOESNT EXIST
+        }
+    })
+
+
+    /* 'joinRoom' is emitted when an existing user joins an existing room - the URL includes room_key and user_id
+        => when app.get('/:room_key/:user_id') is called */
+    socket.on('joinRoom', ({roomKey, userId}) => {
+
         if(Uno.hasRoom(roomKey)) {
             socket.join(roomKey)
 
@@ -74,6 +91,17 @@ io.on('connection', (socket) => {
         //TODO Was soll passieren, wenn es den Raum oder den User nicht gibt
     })
 
+
+    /* 'leaveRoom' is called when the user clicks on the leaveRoom Button in the room in room.html */
+    socket.on('leaveRoom', ({roomKey, userId}) => {
+        if(Uno.hasRoom(roomKey)) {
+            const nameOfDisconnectedUser = Uno.disconnectUserFromRoom(roomKey, userId) // returns the username of the disconnected user
+            io.in(roomKey).emit('userDisconnected', nameOfDisconnectedUser)
+        }
+        //TODO Was soll passieren, wenn es den Raum oder den User nicht gibt
+    })
+
+    
     socket.on('disconnecting', () => {
         console.log('user disconnected')
     });

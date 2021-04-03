@@ -53,8 +53,55 @@ class UnoApp {
 		return undefined
 	}
 
+	/**
+	 * creates a user with the given username as its username property and adds it to the room with the given roomKey
+	 * @param roomKey of the room the user is being added to
+	 * @param userName of the to be created user
+	 * @return {string} generated userId of the user
+	 */
+	createAndAddUserToRoom(roomKey, userName) {
+		const room = this.rooms[roomKey]
+		if (room === undefined) {
+			throw new NonExistingRoomException()
+		}
+
+		let tmpUser = new User(userName, "normal")
+		room.addUser(tmpUser)
+
+		return tmpUser.getId()
+	}
+
+	/**
+	 * deletes a user from the room he is in and returns the username
+	 * @param roomKey of the room which the user is disconnecting from
+	 * @param userId of the disconnecting user, needed to identify the user
+	 * @return {string} username of the disconnecting user
+	 */
+	disconnectUserFromRoom(roomKey, userId) {
+		const room = this.rooms[roomKey]
+		let userName = ""
+
+		for(let i = 0; i < room.users.length; i++) {
+			if(room.users[i].getId() === userId) {
+				userName = room.users[i].getName()
+				room.users.splice(i, 1)
+			}
+		}
+
+		return userName
+	}
+
 
 }
+
+function NonExistingRoomException(message) {
+	this.message = message;
+	this.name = "NonExistingRoomException";
+}
+
+
+
+
 
 class User {
 	constructor(name, type) {
@@ -71,6 +118,14 @@ class User {
 		return this.name
 	}
 }
+
+
+
+
+
+
+
+
 
 class Room {
 	constructor(key) {
@@ -91,6 +146,14 @@ class Room {
 		
 	}
 }
+
+
+
+
+
+
+
+
 
  /**
    * Generates a new, unused Room Key
@@ -113,6 +176,13 @@ function generateRoomKey(allKeys) {
 
     return resultKey
 }
+
+
+
+
+
+
+
 
 module.exports = {
   UnoApp,
